@@ -1,1 +1,1 @@
-module github.com/andrewchambers/extra-go
+module github.com/andrewchambers/go-extra

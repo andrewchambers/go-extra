@@ -26,7 +26,7 @@ func (m *MergedReadWriteCloser) Close() error {
 	return nil
 }
 
-func SocketPair() (io.ReadWriteCloser, io.ReadWriteCloser) {
+func ConnectedPipes() (*MergedReadWriteCloser, *MergedReadWriteCloser) {
 	a, b := io.Pipe()
 	x, y := io.Pipe()
 
