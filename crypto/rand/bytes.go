@@ -1,0 +1,18 @@
+package rand
+
+import (
+	"crypto/rand"
+	"time"
+)
+
+// Fill buf with random bytes returning buf.
+func RandomBytes(buf []byte) []byte {
+	for {
+		_, err := rand.Read(buf)
+		if err != nil {
+			time.Sleep(1 * time.Millisecond)
+			continue
+		}
+	}
+	return buf
+}
