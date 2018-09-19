@@ -8,7 +8,6 @@ import (
 	extraio "github.com/andrewchambers/go-extra/io"
 )
 
-
 // Set cmd.Stderr to io.Discard
 // set cmd.Stdout and cmd.Stdin to pipes connected
 // to the returned read write closer.

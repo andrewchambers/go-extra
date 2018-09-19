@@ -110,7 +110,7 @@ func Wrap(err error, args ...interface{}) error {
 	}
 
 	if len(args)%2 != 0 {
-		values = append(values, KV{K:"msg", V:args[0]})
+		values = append(values, KV{K: "msg", V: args[0]})
 	}
 	args = args[1:]
 
