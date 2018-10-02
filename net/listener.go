@@ -16,13 +16,13 @@ type ConnectionManagerOptions struct {
 	MaxConcurrent int64
 }
 
-func (l *ConnectionManagerOptions) Sanitize() {
-	if l.Domain == "" {
-		l.Domain = "tcp"
+func (opt *ConnectionManagerOptions) Sanitize() {
+	if opt.Domain == "" {
+		opt.Domain = "tcp"
 	}
 
-	if l.MaxConcurrent <= 0 {
-		l.MaxConcurrent = 1
+	if opt.MaxConcurrent <= 0 {
+		opt.MaxConcurrent = 1
 	}
 }
 
@@ -67,7 +67,7 @@ func (cm *ConnectionManager) Accept() (net.Conn, error) {
 	}, nil
 }
 
-func (cm *ConnectionManager) Release(c *Connection) {
+func (cm *ConnectionManager) release(c *Connection) {
 	cm.connectionLimit.Release(1)
 }
 
@@ -109,7 +109,7 @@ func (conn *Connection) Write(buf []byte) (int, error) {
 }
 
 func (conn *Connection) Close() error {
-	conn.manager.Release(conn)
+	conn.manager.release(conn)
 	return conn.Conn.Close()
 }
 
