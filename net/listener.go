@@ -57,6 +57,7 @@ func (cm *ConnectionManager) Accept() (net.Conn, error) {
 
 	conn, err := cm.l.Accept()
 	if err != nil {
+		cm.connectionLimit.Release(1)
 		return nil, errors.Wrap(err)
 	}
 
