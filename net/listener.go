@@ -3,6 +3,7 @@ package net
 import (
 	"context"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -49,7 +50,6 @@ type ConnectionManager struct {
 }
 
 func (cm *ConnectionManager) Accept() (net.Conn, error) {
-
 	err := cm.connectionLimit.Acquire(context.TODO(), 1)
 	if err != nil {
 		return nil, errors.Wrap(err)
@@ -80,10 +80,11 @@ func (cm *ConnectionManager) Addr() net.Addr {
 }
 
 type Connection struct {
-	manager    *ConnectionManager
-	Conn       net.Conn
-	readCount  uint64
-	writeCount uint64
+	manager     *ConnectionManager
+	Conn        net.Conn
+	readCount   uint64
+	writeCount  uint64
+	releaseOnce sync.Once
 }
 
 // Safe for concurrent use
@@ -109,7 +110,9 @@ func (conn *Connection) Write(buf []byte) (int, error) {
 }
 
 func (conn *Connection) Close() error {
-	conn.manager.release(conn)
+	conn.releaseOnce.Do(func() {
+		conn.manager.release(conn)
+	})
 	return conn.Conn.Close()
 }
 
