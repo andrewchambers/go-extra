@@ -3,6 +3,7 @@ package errors
 import (
 	"fmt"
 	"io"
+	"testing"
 )
 
 func ExampleWrapped() {
@@ -24,4 +25,27 @@ func ExampleGetTrace() {
 	err = Wrap(err, "id", 5)
 	err = Wrapf(err, "another %s", "error")
 	fmt.Println(GetTrace(err).String())
+}
+
+func TestDepthLimit(t *testing.T) {
+	err := io.EOF
+	rootCause := err
+
+	for i := 0; i < MAX_FRAME_SIZE+10; i++ {
+		if i%2 == 0 {
+			err = Wrap(err)
+		} else {
+			err = Wrapf(err, "err%s", "or")
+		}
+	}
+
+	if RootCause(err) != rootCause {
+		t.FailNow()
+	}
+
+	e := err.(*Error)
+	if !e.DroppedInfo {
+		t.FailNow()
+	}
+
 }
