@@ -22,6 +22,7 @@ type Frame struct {
 	SourceHost  string
 	SourceFile  string
 	SourceLine  int
+	Depth       uint64
 }
 
 type Trace struct {
@@ -222,6 +223,7 @@ func GetTrace(err error) *Trace {
 				SourceHost:  e.SourceHost,
 				SourceFile:  e.SourceFile,
 				SourceLine:  e.SourceLine,
+				Depth:       e.Depth,
 			})
 		} else {
 			fn := runtime.FuncForPC(e.SourcePC)
@@ -232,6 +234,7 @@ func GetTrace(err error) *Trace {
 				SourceHost:  hostname,
 				SourceFile:  file,
 				SourceLine:  line,
+				Depth:       e.Depth,
 			})
 		}
 
