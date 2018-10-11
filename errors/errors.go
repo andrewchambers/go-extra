@@ -141,9 +141,10 @@ func Wrap(err error, args ...interface{}) error {
 	}
 
 	if len(args)%2 != 0 {
+		// If we are an odd number, the first must be the a message
 		values = append(values, KV{K: "msg", V: fmt.Sprintf("%v", args[0])})
+		args = args[1:]
 	}
-	args = args[1:]
 
 	for i := 0; i < len(args); i += 2 {
 		k, ok := args[i].(string)

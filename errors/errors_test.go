@@ -49,3 +49,19 @@ func TestDepthLimit(t *testing.T) {
 	}
 
 }
+
+func TestOddWrap(t *testing.T) {
+	err := io.EOF
+	err = Wrap(err, "msg", "val", 1)
+	if RootCause(err) != io.EOF {
+		t.FailNow()
+	}
+}
+
+func TestTwoWrap(t *testing.T) {
+	err := io.EOF
+	err = Wrap(err, "val", 1)
+	if RootCause(err) != io.EOF {
+		t.FailNow()
+	}
+}
