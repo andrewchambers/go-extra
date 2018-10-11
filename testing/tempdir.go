@@ -6,8 +6,7 @@ import (
 	"testing"
 )
 
-// ScratchDir ...
-// Create a temporary directory.
+// ScratchDir creates a temporary directory.
 // Call the returned closure to cleanup.
 func ScratchDir(t *testing.T) (string, func()) {
 	d, err := ioutil.TempDir("", "")

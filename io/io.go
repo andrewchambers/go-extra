@@ -1,8 +1,10 @@
 package io
 
 import (
+	"errors"
 	"io"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -109,4 +111,28 @@ func (mw *MeteredReader) Read(buf []byte) (int, error) {
 	n, err := mw.R.Read(buf)
 	atomic.AddInt64(&mw.ReadCount, int64(n))
 	return n, err
+}
+
+var ErrOutOfSpace error = errors.New("Out of space")
+
+// Write to W until the given buffer is larger then N.
+// In that case return ErrOutOfSpace
+// Multiple writers are safe, but
+// don't access N concurrently with writing.
+type LimitedWriter struct {
+	lock sync.Mutex
+	N    int64
+	W    io.Writer
+}
+
+func (w *LimitedWriter) Write(buf []byte) (int, error) {
+	w.lock.Lock()
+	if int64(len(buf)) > w.N {
+		w.lock.Unlock()
+		return 0, ErrOutOfSpace
+	}
+	w.N -= int64(len(buf))
+	w.lock.Unlock()
+
+	return w.W.Write(buf)
 }
