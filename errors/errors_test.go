@@ -31,7 +31,7 @@ func TestDepthLimit(t *testing.T) {
 	err := io.EOF
 	rootCause := err
 
-	for i := 0; i < MAX_FRAME_SIZE+10; i++ {
+	for i := 0; i < MAX_FRAME_COUNT+10; i++ {
 		if i%2 == 0 {
 			err = Wrap(err)
 		} else {

@@ -13,16 +13,26 @@ func init() {
 	hostname, _ = os.Hostname()
 }
 
-const MAX_FRAME_SIZE = 200
+const MAX_FRAME_COUNT = 200
 
 type Frame struct {
-	OurError    bool
-	Values      []KV
-	DroppedInfo bool
-	SourceHost  string
-	SourceFile  string
-	SourceLine  int
-	Depth       uint64
+	ExtendedError bool
+	Values        []KV
+	DroppedInfo   bool
+	SourceHost    string
+	SourceFile    string
+	SourceLine    int
+	Depth         uint64
+}
+
+func lookupValue(tab []KV, k string) (string, bool) {
+	for _, kv := range tab {
+		if kv.K == k {
+			return kv.V, true
+		}
+	}
+
+	return "", false
 }
 
 type Trace struct {
@@ -68,10 +78,7 @@ func (err *Error) Error() string {
 
 	msgVal, ok := err.LookupValue("msg")
 	if ok {
-		msgStr, ok := msgVal.(string)
-		if ok {
-			msg = msgStr
-		}
+		msg = msgVal
 	}
 
 	if rootCause == nil || err.Cause == nil {
@@ -81,14 +88,8 @@ func (err *Error) Error() string {
 	return fmt.Sprintf("%s: %s", msg, rootCause.Error())
 }
 
-func (err *Error) LookupValue(k string) (interface{}, bool) {
-	for _, kv := range err.Values {
-		if kv.K == k {
-			return kv.V, true
-		}
-	}
-
-	return nil, false
+func (err *Error) LookupValue(k string) (string, bool) {
+	return lookupValue(err.Values, k)
 }
 
 func getDepth(err error) uint64 {
@@ -157,7 +158,7 @@ func Wrap(err error, args ...interface{}) error {
 	droppedInfo := false
 	cause := err
 	rootCause := RootCause(err)
-	if depth > MAX_FRAME_SIZE {
+	if depth > MAX_FRAME_COUNT {
 		cause = Cause(cause)
 		droppedInfo = true
 	}
@@ -184,7 +185,7 @@ func Wrapf(err error, format string, args ...interface{}) error {
 	droppedInfo := false
 	cause := err
 	rootCause := RootCause(err)
-	if depth > MAX_FRAME_SIZE {
+	if depth > MAX_FRAME_COUNT {
 		cause = Cause(cause)
 		droppedInfo = true
 	}
@@ -203,38 +204,40 @@ func Wrapf(err error, format string, args ...interface{}) error {
 func GetTrace(err error) *Trace {
 	t := &Trace{}
 
-	for i := 0; i < MAX_FRAME_SIZE; i++ {
+	for {
 		if err == nil {
 			return t
 		}
 		e, ok := err.(*Error)
 		if !ok {
 			t.Frames = append(t.Frames, Frame{
-				Values:   []KV{KV{K: "msg", V: err.Error()}},
-				OurError: false,
+				Values:        []KV{KV{K: "msg", V: err.Error()}},
+				ExtendedError: false,
 			})
 			return t
 		}
 
 		if e.WasDerserialized {
 			t.Frames = append(t.Frames, Frame{
-				OurError:    true,
-				DroppedInfo: e.DroppedInfo,
-				SourceHost:  e.SourceHost,
-				SourceFile:  e.SourceFile,
-				SourceLine:  e.SourceLine,
-				Depth:       e.Depth,
+				ExtendedError: true,
+				DroppedInfo:   e.DroppedInfo,
+				SourceHost:    e.SourceHost,
+				SourceFile:    e.SourceFile,
+				SourceLine:    e.SourceLine,
+				Depth:         e.Depth,
+				Values:        e.Values,
 			})
 		} else {
 			fn := runtime.FuncForPC(e.SourcePC)
 			file, line := fn.FileLine(e.SourcePC)
 			t.Frames = append(t.Frames, Frame{
-				OurError:    true,
-				DroppedInfo: e.DroppedInfo,
-				SourceHost:  hostname,
-				SourceFile:  file,
-				SourceLine:  line,
-				Depth:       e.Depth,
+				ExtendedError: true,
+				DroppedInfo:   e.DroppedInfo,
+				SourceHost:    hostname,
+				SourceFile:    file,
+				SourceLine:    line,
+				Depth:         e.Depth,
+				Values:        e.Values,
 			})
 		}
 
@@ -282,7 +285,7 @@ func (t *Trace) String() string {
 	var buf bytes.Buffer
 
 	for _, f := range t.Frames {
-		if f.OurError {
+		if f.ExtendedError {
 			_, _ = fmt.Fprintf(&buf, "%s:%s:%d\n", f.SourceHost, f.SourceFile, f.SourceLine)
 		} else {
 			_, _ = fmt.Fprintf(&buf, "???:???:???\n")
