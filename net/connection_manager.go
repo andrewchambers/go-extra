@@ -64,8 +64,8 @@ func (cm *ConnectionManager) Accept() (net.Conn, error) {
 		return nil, errors.Wrap(err)
 	}
 
-	if tcpConn, ok := conn.(*net.TCPConn); ok {
-		if cm.keepAliveDuration != 0 {
+	if cm.keepAliveDuration != 0 {
+		if tcpConn, ok := conn.(*net.TCPConn); ok {
 			tcpConn.SetKeepAlive(true)
 			tcpConn.SetKeepAlivePeriod(cm.keepAliveDuration)
 		}
