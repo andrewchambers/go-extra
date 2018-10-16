@@ -12,9 +12,10 @@ import (
 )
 
 type ConnectionManagerOptions struct {
-	Domain        string
-	Addr          string
-	MaxConcurrent int64
+	Domain            string
+	Addr              string
+	MaxConcurrent     int64
+	KeepAliveDuration time.Duration
 }
 
 func (opt *ConnectionManagerOptions) Sanitize() {
@@ -47,6 +48,8 @@ func NewConnectionManager(options ConnectionManagerOptions) (*ConnectionManager,
 type ConnectionManager struct {
 	connectionLimit *semaphore.Weighted
 	l               net.Listener
+
+	keepAliveDuration time.Duration
 }
 
 func (cm *ConnectionManager) Accept() (net.Conn, error) {
@@ -59,6 +62,13 @@ func (cm *ConnectionManager) Accept() (net.Conn, error) {
 	if err != nil {
 		cm.connectionLimit.Release(1)
 		return nil, errors.Wrap(err)
+	}
+
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		if cm.keepAliveDuration != 0 {
+			tcpConn.SetKeepAlive(true)
+			tcpConn.SetKeepAlivePeriod(cm.keepAliveDuration)
+		}
 	}
 
 	return &Connection{
