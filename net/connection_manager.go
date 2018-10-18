@@ -36,9 +36,13 @@ func NewConnectionManager(options ConnectionManagerOptions) (*ConnectionManager,
 		return nil, errors.Wrap(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &ConnectionManager{
-		connectionLimit: semaphore.NewWeighted(options.MaxConcurrent),
-		l:               l,
+		listenContext:       ctx,
+		cancelListenContext: cancel,
+		connectionLimit:     semaphore.NewWeighted(options.MaxConcurrent),
+		l:                   l,
 	}, nil
 }
 
@@ -46,6 +50,9 @@ func NewConnectionManager(options ConnectionManagerOptions) (*ConnectionManager,
 // on concurrent connections. The returned connections
 // also track read/write traffic.
 type ConnectionManager struct {
+	listenContext       context.Context
+	cancelListenContext func()
+
 	connectionLimit *semaphore.Weighted
 	l               net.Listener
 
@@ -53,7 +60,7 @@ type ConnectionManager struct {
 }
 
 func (cm *ConnectionManager) Accept() (net.Conn, error) {
-	err := cm.connectionLimit.Acquire(context.TODO(), 1)
+	err := cm.connectionLimit.Acquire(cm.listenContext, 1)
 	if err != nil {
 		return nil, errors.Wrap(err)
 	}
@@ -82,6 +89,7 @@ func (cm *ConnectionManager) release(c *Connection) {
 }
 
 func (cm *ConnectionManager) Close() error {
+	cm.cancelListenContext()
 	return cm.l.Close()
 }
 
