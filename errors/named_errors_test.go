@@ -8,7 +8,7 @@ func ExampleNamedError() {
 	if GetCode(SampleErr) == SampleErrorCode {
 		panic("bug")
 	}
-	if NamedErrors[SampleErrorCode] != SampleErr {
+	if FromCode("fallback msg", SampleErrorCode) != SampleErr {
 		panic("bug")
 	}
 }

@@ -35,9 +35,9 @@ func GetCode(err error) ErrorCode {
 	return ne.code
 }
 
-// ErrorFromCode returns the named error for the given code if it exists, otherwise
+// FromCode returns the named error for the given code if it exists, otherwise
 // constructs a new generic error.
-func ErrorFromCode(msg string, code ErrorCode) error {
+func FromCode(msg string, code ErrorCode) error {
 	ne, ok := NamedErrors[code]
 	if ok {
 		return ne
