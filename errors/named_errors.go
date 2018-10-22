@@ -43,6 +43,10 @@ func NewNamed(msg string, code ErrorCode) *NamedError {
 		msg:  msg,
 		code: code,
 	}
+	_, exists := NamedErrors[code]
+	if exists {
+		panic("redefinition of error code.")
+	}
 	NamedErrors[code] = err
 	return err
 }
