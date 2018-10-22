@@ -35,6 +35,16 @@ func GetCode(err error) ErrorCode {
 	return ne.code
 }
 
+// ErrorFromCode returns the named error for the given code if it exists, otherwise
+// constructs a new generic error.
+func ErrorFromCode(msg string, code ErrorCode) error {
+	ne, ok := NamedErrors[code]
+	if ok {
+		return ne
+	}
+	return New(msg)
+}
+
 func NewNamed(msg string, code ErrorCode) *NamedError {
 	if code == AnonymousErrorCode {
 		panic("error code 0 is reserved to mean anonymous error")
